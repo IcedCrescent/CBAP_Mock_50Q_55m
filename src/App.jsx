@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Timer, RotateCcw, Flag, LayoutGrid, ChevronLeft, ChevronRight, CheckCircle2, XCircle, BookOpen
+  Timer, RotateCcw, Flag, LayoutGrid, ChevronLeft, ChevronRight, CheckCircle2, XCircle, BookOpen, Pause, Play
 } from "lucide-react";
 
 /**
@@ -20,6 +20,7 @@ import {
 import BANK from "./cbap_bank_min.json";
 const SESSION_SIZE = 50;
 const TIMER_SECONDS = 55 * 60;
+const STORAGE_KEY = "cbap_mock_state_v1";
 
 function formatTime(total) {
   const m = Math.floor(total / 60);
@@ -59,16 +60,32 @@ function normalizeQ(q) {
 }
 
 export default function CBAPMock50Q55M() {
-  const [started, setStarted] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
-  const [running, setRunning] = useState(false);
-  const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [flagged, setFlagged] = useState({});
+  const saved = useMemo(() => {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      if (s) return JSON.parse(s);
+    } catch (e) {}
+    return null;
+  }, []);
+
+  const [started, setStarted] = useState(saved?.started ?? false);
+  const [submitted, setSubmitted] = useState(saved?.submitted ?? false);
+  const [timeLeft, setTimeLeft] = useState(saved?.timeLeft ?? TIMER_SECONDS);
+  const [running, setRunning] = useState(false); // ALWAYS paused when loaded or reloaded
+  const [index, setIndex] = useState(saved?.index ?? 0);
+  const [answers, setAnswers] = useState(saved?.answers ?? {});
+  const [flagged, setFlagged] = useState(saved?.flagged ?? {});
   const [showGrid, setShowGrid] = useState(false);
   const [showExplanations, setShowExplanations] = useState(true);
-  const [seed, setSeed] = useState(() => (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0);
+  const [seed, setSeed] = useState(saved?.seed ?? (() => (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0));
+
+  useEffect(() => {
+    if (!started && !submitted) {
+      localStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ started, submitted, timeLeft, index, answers, flagged, seed }));
+  }, [started, submitted, timeLeft, index, answers, flagged, seed]);
 
   const rand = useMemo(() => mulberry32(seed), [seed]);
 
@@ -143,6 +160,7 @@ export default function CBAPMock50Q55M() {
   };
 
   const newSession = () => {
+    localStorage.removeItem(STORAGE_KEY);
     setSeed((s) => ((s + 0x9e3779b9) ^ Date.now()) >>> 0);
     setStarted(false);
     setSubmitted(false);
@@ -183,8 +201,8 @@ export default function CBAPMock50Q55M() {
             <p className="text-sm text-slate-600">Tap to select answers (no typing). Mobile responsive.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {started && (
-              <div className={`flex items-center gap-2 rounded-2xl px-3 py-2 border ${timeLeft <= 300 ? "border-rose-400 bg-rose-50" : "bg-white"}`}>
+            {started && !submitted && (
+              <div className={`flex items-center gap-2 rounded-2xl px-3 py-2 border ${timeLeft <= 300 ? "border-rose-400 bg-rose-50" : "bg-white"} ${!running ? "opacity-50" : ""}`}>
                 <Timer className="h-4 w-4" />
                 <span className="font-mono font-semibold">{formatTime(timeLeft)}</span>
               </div>
@@ -193,16 +211,36 @@ export default function CBAPMock50Q55M() {
               <Button className="rounded-2xl" onClick={start}>Start Session</Button>
             ) : (
               <>
-                <Button variant="outline" className="rounded-2xl" onClick={() => setShowGrid((v) => !v)}>
-                  <LayoutGrid className="h-4 w-4 mr-2" /> Grid
-                </Button>
-                <Button variant="outline" className="rounded-2xl" onClick={toggleFlag}>
-                  <Flag className="h-4 w-4 mr-2" /> {flagged[index] ? "Unflag" : "Flag"}
-                </Button>
+                {started && !submitted && (
+                  <Button 
+                    variant="outline" 
+                    className={`rounded-2xl ${!running ? "border-emerald-400 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : ""}`} 
+                    onClick={() => setRunning(!running)}
+                  >
+                    {!running ? <><Play className="h-4 w-4 mr-2" /> Resume</> : <><Pause className="h-4 w-4 mr-2" /> Pause</>}
+                  </Button>
+                )}
+                
+                {(running || submitted) && (
+                  <>
+                    <Button variant="outline" className="rounded-2xl" onClick={() => setShowGrid((v) => !v)}>
+                      <LayoutGrid className="h-4 w-4 mr-2" /> Grid
+                    </Button>
+                    {!submitted && (
+                      <Button variant="outline" className="rounded-2xl" onClick={toggleFlag}>
+                        <Flag className="h-4 w-4 mr-2" /> {flagged[index] ? "Unflag" : "Flag"}
+                      </Button>
+                    )}
+                  </>
+                )}
+                
                 <Button variant="outline" className="rounded-2xl" onClick={newSession}>
-                  <RotateCcw className="h-4 w-4 mr-2" /> New
+                  <RotateCcw className="h-4 w-4 mr-2" /> {submitted ? "New" : "Discard"}
                 </Button>
-                <Button className="rounded-2xl" onClick={submit} disabled={submitted || score.answered === 0}>Submit</Button>
+                
+                {(running || submitted) && (
+                  <Button className="rounded-2xl" onClick={submit} disabled={submitted || score.answered === 0}>Submit</Button>
+                )}
               </>
             )}
           </div>
@@ -226,8 +264,24 @@ export default function CBAPMock50Q55M() {
         ) : (
           <Card className="rounded-2xl shadow-sm">
             <CardContent className="p-4 sm:p-6 space-y-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-2">
+              {started && !submitted && !running ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
+                  <Pause className="h-12 w-12 text-slate-300" />
+                  <h2 className="text-2xl font-semibold">Session Paused</h2>
+                  <p className="text-slate-600">Your timer and progress are automatically saved.<br/>You can close the tab and return later.</p>
+                  <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+                    <Button className="rounded-2xl sm:pr-8 sm:pl-6" size="lg" onClick={() => setRunning(true)}>
+                      <Play className="h-5 w-5 mr-3" /> Resume Session
+                    </Button>
+                    <Button variant="outline" size="lg" className="rounded-2xl" onClick={newSession}>
+                      Discard Session
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="secondary" className="rounded-xl">Q {index + 1}/50</Badge>
                   {flagged[index] && <Badge variant="destructive" className="rounded-xl">Flagged</Badge>}
                   {submitted && (
@@ -354,6 +408,8 @@ export default function CBAPMock50Q55M() {
                     </>
                   )}
                 </div>
+              )}
+                </>
               )}
             </CardContent>
           </Card>
