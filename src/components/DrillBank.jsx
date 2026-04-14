@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Timer, RotateCcw, ChevronLeft, ChevronRight, CheckCircle2, XCircle, Flag, LayoutGrid, Pause, Play } from "lucide-react";
+import drillData from "../drill_bank_data.json";
 
 /**
  * CBAP Drill Bank App (Responsive)
@@ -62,345 +63,34 @@ function formatTime(total) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-// --- Template library ------------------------------------------------------
-// Each template returns: { stem, correct, distractors[], keywords[] }
-// We generate 30 questions by sampling templates + injecting scenario variables.
-
-const POOLS = {
-  org: ["a retail bank", "a healthcare provider", "a fintech startup", "a government agency", "a logistics company", "a SaaS vendor"],
-  constraint: ["fixed regulatory deadline", "limited stakeholder availability", "distributed stakeholders", "high audit requirements", "vendor dependency"],
-  channel: ["workshop", "interview", "survey", "observation", "prototype review"],
-  risk: ["scope creep", "misunderstood requirements", "rework", "non-compliance", "low stakeholder buy-in"],
-  artifact: ["requirements package", "traceability matrix", "backlog", "decision log", "business analysis plan"],
-  metric: ["defect leakage", "cycle time", "rework rate", "stakeholder satisfaction", "time-to-approve"],
-  technique: ["Workshops", "Interviews", "Document Analysis", "Decision Analysis", "Risk Analysis", "Process Modelling", "Prioritization"],
-};
-
-function pick(rand, arr) {
-  return arr[Math.floor(rand() * arr.length)];
-}
-
-// KA4 templates: Elicitation & Collaboration
-const T_KA4_MED = [
-  (rand) => {
-    const c = pick(rand, POOLS.constraint);
-    return {
-      keywords: ["elicitation", "stakeholders", "technique"],
-      stem: `A BA is preparing for ${pick(rand, POOLS.channel)} sessions for ${pick(rand, POOLS.org)} under a ${c}. The BA must decide who to involve, what information is needed, and what materials to prepare. What should the BA do NEXT?`,
-      correct: "Prepare for elicitation by planning stakeholders, information needs, and session materials.",
-      distractors: [
-        "Approve requirements to reduce uncertainty before meeting stakeholders.",
-        "Communicate a final requirements package to all stakeholders immediately.",
-        "Baseline the solution scope and defer elicitation until development starts.",
-      ],
-    };
-  },
-  (rand) => ({
-    keywords: ["workshop", "facilitation", "needs"],
-    stem: `During a ${pick(rand, POOLS.channel)}, two stakeholders keep proposing solutions and others remain silent. The BA wants to obtain balanced input on needs and constraints. What is the BEST action?`,
-    correct: "Facilitate the session to refocus on needs and ensure balanced participation.",
-    distractors: [
-      "End the session and move directly to requirements approval.",
-      "Accept the dominant stakeholders' solution to maintain momentum.",
-      "Escalate to governance and pause elicitation until a decision is made.",
-    ],
-  }),
-  (rand) => ({
-    keywords: ["confirm", "elicitation results", "accuracy"],
-    stem: `After elicitation, stakeholders disagree with what was captured and claim key points were misunderstood. What should the BA do to proceed safely?`,
-    correct: "Confirm elicitation results by reconciling discrepancies and obtaining agreement on captured information.",
-    distractors: [
-      "Publish the requirements package and assume stakeholders will adapt later.",
-      "Move to design and resolve misunderstandings during implementation.",
-      "Replace elicitation with traceability to avoid further stakeholder debate.",
-    ],
-  }),
-  (rand) => ({
-    keywords: ["communicate", "shared understanding", "iterative"],
-    stem: `The BA sends analysis findings but stakeholders interpret the message differently. What should the BA do to ensure shared understanding of the business analysis information?`,
-    correct: "Use two-way, iterative communication and adjust the delivery method to ensure understanding.",
-    distractors: [
-      "Send the same message again without changes to maintain consistency.",
-      "Ask the sponsor to communicate on the BA’s behalf.",
-      "Wait until the next governance checkpoint to address confusion.",
-    ],
-  }),
-  (rand) => ({
-    keywords: ["collaboration", "conflict", "engagement"],
-    stem: `Stakeholders are becoming unresponsive and conflicts keep resurfacing, slowing progress. Which task MOST directly addresses maintaining productive engagement over time?`,
-    correct: "Manage stakeholder collaboration to sustain engagement and resolve issues throughout the initiative.",
-    distractors: [
-      "Conduct elicitation to capture more requirements immediately.",
-      "Define traceability to link requirements to designs.",
-      "Prioritize requirements to reduce the backlog size.",
-    ],
-  }),
-];
-
-const T_KA4_HARD = [
-  (rand) => {
-    const org = pick(rand, POOLS.org);
-    return {
-      keywords: ["confirm", "communicate", "trap: similar wording"],
-      stem: `A BA runs multiple elicitation sessions for ${org}. Stakeholders reviewed the notes and said, “That’s not what we meant,” but they also ask for a summary package to circulate. The BA must avoid rework later. What should the BA do FIRST?`,
-      correct: "Confirm elicitation results with stakeholders to correct and agree on what was captured.",
-      distractors: [
-        "Immediately circulate a requirements package to all stakeholders to build momentum.",
-        "Escalate the disagreement to governance for a binding decision.",
-        "Start prioritization to decide which requirements matter most.",
-      ],
-    };
-  },
-  (rand) => ({
-    keywords: ["bi-directional", "tone", "audience"],
-    stem: `A BA communicates requirements to executives and delivery teams. Executives complain the message is too detailed, while the team says key acceptance details are missing. Stakeholders also disagree on terminology. Which approach BEST aligns with BABOK communication principles?`,
-    correct: "Tailor content, tone, and format per audience and verify understanding through bi-directional communication.",
-    distractors: [
-      "Standardize one detailed document to prevent inconsistencies.",
-      "Communicate only through a single stakeholder to avoid conflicting interpretations.",
-      "Skip communication and rely on traceability links for clarity.",
-    ],
-  }),
-];
-
-// KA5 templates: Requirements Life Cycle
-const T_KA5_MED = [
-  (rand) => ({
-    keywords: ["traceability", "impact", "dependencies"],
-    stem: `A change request is raised and the BA must quickly determine what designs, test cases, and business objectives may be impacted. What is the BEST next step?`,
-    correct: "Use requirements traceability to evaluate impacts and dependencies.",
-    distractors: [
-      "Approve the change since it is urgent.",
-      "Re-baseline all requirements immediately.",
-      "Ask developers to estimate and decide priority.",
-    ],
-  }),
-  (rand) => ({
-    keywords: ["maintain", "obsolete", "current state"],
-    stem: `Several requirements captured early are no longer relevant due to changed assumptions. What should the BA do to maintain the requirement set properly?`,
-    correct: "Update status and maintain records (e.g., mark obsolete) so the set reflects current needs.",
-    distractors: [
-      "Delete the requirements without record to reduce noise.",
-      "Keep them unchanged for possible future use.",
-      "Convert all of them into new high-priority backlog items.",
-    ],
-  }),
-  (rand) => ({
-    keywords: ["prioritize", "value", "business objectives"],
-    stem: `Two stakeholders disagree on priority. The BA must recommend an ordering that supports the initiative. What should be the PRIMARY basis?`,
-    correct: "Business value and alignment to objectives (considering risk and dependencies).",
-    distractors: [
-      "Stakeholder seniority.",
-      "The order in which requests were received.",
-      "Lowest implementation effort first.",
-    ],
-  }),
-  (rand) => ({
-    keywords: ["assess change", "risk", "scope"],
-    stem: `A stakeholder labels a request as “urgent.” The BA has not assessed impacts yet. What should the BA do NEXT?`,
-    correct: "Assess impacts, risks, and priority before committing to implement.",
-    distractors: [
-      "Commit to the change to keep stakeholders satisfied.",
-      "Reject the change until the next release.",
-      "Send the change directly to development.",
-    ],
-  }),
-];
-
-const T_KA5_HARD = [
-  (rand) => ({
-    keywords: ["trace", "untraced functionality", "trap"],
-    stem: `During UAT, users love a feature that cannot be traced to any approved requirement. The product owner wants to keep it. What is the BA’s BEST first action?`,
-    correct: "Investigate the traceability gap and determine if it represents missing requirements or scope creep.",
-    distractors: [
-      "Approve it because it delivers value.",
-      "Remove it immediately to enforce governance.",
-      "Create a new requirement and mark it approved retroactively.",
-    ],
-  }),
-  (rand) => ({
-    keywords: ["prioritize", "risk vs value", "trade-off"],
-    stem: `A requirement has high business value but introduces significant technical risk and dependencies. Which recommendation BEST reflects BABOK prioritization thinking?`,
-    correct: "Keep value-driven priority while documenting risk/dependencies and sequencing work to reduce uncertainty.",
-    distractors: [
-      "Always lower priority when technical risk is high.",
-      "Always implement risky items last.",
-      "Ignore risk if stakeholders demand the requirement.",
-    ],
-  }),
-];
-
-// KA3 templates: Planning & Monitoring
-const T_KA3_MED = [
-  (rand) => ({
-    keywords: ["timing", "availability", "deadline"],
-    stem: `Stakeholders are only available intermittently and the initiative has a fixed deadline. Which BA approach element is MOST impacted?`,
-    correct: "Timing of business analysis work.",
-    distractors: [
-      "Level of abstraction.",
-      "Traceability approach.",
-      "Stakeholder attitudes.",
-    ],
-  }),
-  (rand) => ({
-    keywords: ["governance", "approval", "change control"],
-    stem: `The organization requires formal review and approval before changing requirements and designs. Which output defines this decision-making structure?`,
-    correct: "Governance approach.",
-    distractors: [
-      "Stakeholder engagement approach.",
-      "Information management approach.",
-      "Elicitation results (confirmed).",
-    ],
-  }),
-];
-const T_KA3_HARD = [
-  (rand) => ({
-    keywords: ["planning approach", "predictive", "adaptive"],
-    stem: `A solution is expected to evolve through short iterations as more is learned. Which BA approach decision does this MOST directly influence?`,
-    correct: "Planning approach along the predictive–adaptive continuum.",
-    distractors: [
-      "Timing of BA work only.",
-      "Approval authority in governance.",
-      "Stakeholder role mapping.",
-    ],
-  }),
-];
-
-// KA6 templates: Strategy / Analysis (custom label)
-const T_KA6_MED = [
-  (rand) => ({
-    keywords: ["current state", "future state", "change strategy"],
-    stem: `A BA is evaluating options to achieve business objectives and define the best path to the future state. Which activity is MOST aligned?`,
-    correct: "Define a change strategy by assessing options and selecting an approach to reach the future state.",
-    distractors: [
-      "Confirm elicitation results.",
-      "Approve requirements.",
-      "Manage stakeholder collaboration.",
-    ],
-  }),
-];
-const T_KA6_HARD = [
-  (rand) => ({
-    keywords: ["assess risks", "trade-offs", "constraints"],
-    stem: `A change initiative has strong benefits but also high regulatory risk and organizational constraints. What should the BA do to support an evidence-based recommendation?`,
-    correct: "Assess risks and constraints, compare options, and recommend a change strategy aligned to objectives.",
-    distractors: [
-      "Prioritize requirements before risks are assessed.",
-      "Start solution evaluation before defining the future state.",
-      "Skip risk analysis if the sponsor is supportive.",
-    ],
-  }),
-];
-
-// KA7 templates: RADD (custom label)
-const T_KA7_MED = [
-  (rand) => ({
-    keywords: ["validate", "verify", "model"],
-    stem: `Stakeholders confirm that requirements represent their needs, but the development team says the requirements are ambiguous and inconsistent. What should the BA do NEXT?`,
-    correct: "Verify requirements quality (clarity, consistency) and refine models/specifications.",
-    distractors: [
-      "Approve requirements immediately.",
-      "Measure solution performance.",
-      "Only reprioritize the backlog.",
-    ],
-  }),
-];
-const T_KA7_HARD = [
-  (rand) => ({
-    keywords: ["design options", "value", "recommend solution"],
-    stem: `Multiple design options satisfy the requirement, but each has different costs and risks. What is the BA’s BEST next step?`,
-    correct: "Analyze potential value and trade-offs across options, then recommend the best solution.",
-    distractors: [
-      "Select the cheapest option without analysis.",
-      "Delay decision until implementation reveals the best option.",
-      "Escalate to governance without providing analysis.",
-    ],
-  }),
-];
-
-// KA8 templates: Solution Evaluation (custom label)
-const T_KA8_MED = [
-  (rand) => ({
-    keywords: ["measure", "performance", "KPI"],
-    stem: `After release, the BA compares actual KPIs against expected outcomes to determine if the solution delivers value. Which activity is this?`,
-    correct: "Measure solution performance against performance measures.",
-    distractors: [
-      "Conduct elicitation.",
-      "Trace requirements.",
-      "Define design options.",
-    ],
-  }),
-];
-const T_KA8_HARD = [
-  (rand) => ({
-    keywords: ["limitations", "recommend actions", "increase value"],
-    stem: `Solution metrics show partial improvement, but users report workarounds and limitations. The BA must recommend next actions to maximize value. What should the BA do?`,
-    correct: "Assess solution limitations and recommend actions to increase solution value.",
-    distractors: [
-      "Re-run stakeholder analysis only.",
-      "Freeze requirements to stop changes.",
-      "Ignore qualitative feedback if KPIs improved.",
-    ],
-  }),
-];
-
-// KA10 templates: Techniques/Tools (custom label)
-const T_KA10_MED = [
-  (rand) => {
-    const t = pick(rand, POOLS.technique);
-    return {
-      keywords: ["technique", "fit", "scenario"],
-      stem: `A BA needs to gather detailed information from a domain SME who has limited time and prefers one-on-one discussions. Which technique is MOST appropriate?`,
-      correct: "Interviews.",
-      distractors: ["Focus groups.", "Brainstorming with a large workshop.", "Observation only."],
-    };
-  },
-];
-const T_KA10_HARD = [
-  (rand) => ({
-    keywords: ["decision analysis", "weighted scoring", "trap"],
-    stem: `A BA must recommend among several options using multiple criteria with different importance (weights). Stakeholders disagree, so the BA needs a transparent method. Which technique BEST fits?`,
-    correct: "Decision analysis using a weighted scoring approach.",
-    distractors: [
-      "Document analysis of previous projects.",
-      "Observation of end users.",
-      "Process modelling without evaluation criteria.",
-    ],
-  }),
-];
-
-const TEMPLATE_MAP = {
-  KA3: { medium: T_KA3_MED, hard: T_KA3_HARD },
-  KA4: { medium: T_KA4_MED, hard: T_KA4_HARD },
-  KA5: { medium: T_KA5_MED, hard: T_KA5_HARD },
-  KA6: { medium: T_KA6_MED, hard: T_KA6_HARD },
-  KA7: { medium: T_KA7_MED, hard: T_KA7_HARD },
-  KA8: { medium: T_KA8_MED, hard: T_KA8_HARD },
-  KA10:{ medium: T_KA10_MED, hard: T_KA10_HARD },
-};
-
 function buildSession(areaKey, mode, seed) {
   const rand = mulberry32(seed);
-  const templates = TEMPLATE_MAP[areaKey][mode];
-  // create 30 questions by cycling templates with varied variables
+  const bankQs = drillData[areaKey] && drillData[areaKey][mode];
+  if (!bankQs) return [];
+
+  // Map to the session format
   const qs = [];
-  for (let i = 0; i < SESSION_QUESTIONS; i++) {
-    const t = templates[i % templates.length];
-    const q = t(rand);
-    const optsRaw = [q.correct, ...q.distractors];
-    const opts = shuffle(optsRaw, rand);
+  for (let i = 0; i < SESSION_QUESTIONS && i < bankQs.length; i++) {
+    const q = bankQs[i];
+    const optsRaw = [q.correct, ...(q.distractors || [])];
+    // Filter out nulls/empties if any exist, just to be safe
+    const validOpts = optsRaw.filter(x => x); 
+    const opts = shuffle(validOpts, rand);
     const correctIndex = opts.indexOf(q.correct);
+
     qs.push({
-      sid: i + 1,
-      stem: q.stem,
+      sid: q.id || (i + 1),
+      stem: q.question,
       options: opts,
       correctIndex,
-      keywords: q.keywords || [],
+      keywords: [areaKey, mode, `Q${q.id || i+1}`],
       areaKey,
       mode,
     });
   }
-  return qs;
+
+  // Shuffle the order of the actual quizzes per session, as requested: "only swap the order of the quizzes"
+  return shuffle(qs, rand);
 }
 
 export default function DrillBank() {
@@ -580,49 +270,47 @@ export default function DrillBank() {
           </div>
         </div>
 
-        <Card className="rounded-2xl shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base sm:text-lg">Select KA + Mode</CardTitle>
-            <CardDescription className="text-sm">Each question includes realistic KA keywords. Hard mode includes traps.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {Object.keys(AREA_CONFIG).map((k) => (
-                <Button
-                  key={k}
-                  variant={area === k ? "default" : "outline"}
-                  className={`rounded-2xl ${area === k ? "" : "bg-white"}`}
-                  onClick={() => { setArea(k); setStarted(false); setSubmitted(false); setRunning(false); setIndex(0); setAnswers({}); setFlagged({}); setShowGrid(false); setTimeLeft(SESSION_SECONDS); }}
-                >
-                  {k}
-                </Button>
-              ))}
-            </div>
+        {!started && (
+          <Card className="rounded-2xl shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base sm:text-lg">Select KA + Mode</CardTitle>
+              <CardDescription className="text-sm">Each question includes realistic KA keywords. Hard mode includes traps.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {Object.keys(AREA_CONFIG).map((k) => (
+                  <Button
+                    key={k}
+                    variant={area === k ? "default" : "outline"}
+                    className={`rounded-2xl ${area === k ? "" : "bg-white"}`}
+                    onClick={() => { setArea(k); setStarted(false); setSubmitted(false); setRunning(false); setIndex(0); setAnswers({}); setFlagged({}); setShowGrid(false); setTimeLeft(SESSION_SECONDS); }}
+                  >
+                    {k}
+                  </Button>
+                ))}
+              </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button variant={mode === "medium" ? "default" : "outline"} className="rounded-2xl" onClick={() => setMode("medium")}>Medium Mode</Button>
-              <Button variant={mode === "hard" ? "destructive" : "outline"} className="rounded-2xl" onClick={() => setMode("hard")}>Hard Mode</Button>
-              <Badge variant="secondary" className="rounded-xl">Session: 30Q / 40m</Badge>
-              <Badge variant="outline" className="rounded-xl">{AREA_CONFIG[area].label}</Badge>
-            </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant={mode === "medium" ? "default" : "outline"} className="rounded-2xl" onClick={() => setMode("medium")}>Medium Mode</Button>
+                <Button variant={mode === "hard" ? "destructive" : "outline"} className="rounded-2xl" onClick={() => setMode("hard")}>Hard Mode</Button>
+                <Badge variant="secondary" className="rounded-xl">Session: 30Q / 40m</Badge>
+                <Badge variant="outline" className="rounded-xl">{AREA_CONFIG[area].label}</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-            <Separator />
-
-            {started && (
-              <div className="space-y-2">
+        {started && (
+          <Card className="rounded-2xl shadow-sm">
+            <CardContent className="p-4 sm:p-6 space-y-4">
+              <div className="space-y-2 mb-2">
                 <div className="flex items-center justify-between text-xs text-slate-600">
                   <span>Progress</span>
                   <span>{progress}%</span>
                 </div>
                 <Progress value={progress} />
               </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {started && (
-          <Card className="rounded-2xl shadow-sm">
-            <CardContent className="p-4 sm:p-6 space-y-4">
               {started && !submitted && !running ? (
                 <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
                   <Pause className="h-12 w-12 text-slate-300" />
