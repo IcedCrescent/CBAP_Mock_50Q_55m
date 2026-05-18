@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import MockExam from "./components/MockExam";
 import DrillBank from "./components/DrillBank";
-import { BookOpen, Target, LayoutDashboard } from "lucide-react";
+import TechniquesDrill from "./components/TechniquesDrill";
+import { BookOpen, Target, LayoutDashboard, Wrench } from "lucide-react";
 
 export default function App() {
   const [route, setRoute] = useState(() => window.location.hash.replace("#", "") || "home");
@@ -18,6 +19,7 @@ export default function App() {
 
   if (route === "mock") return <MockExam />;
   if (route === "drill") return <DrillBank />;
+  if (route === "techniques") return <TechniquesDrill />;
 
   // Home Menu
   return (
@@ -31,7 +33,7 @@ export default function App() {
           <p className="text-lg text-slate-600">Choose your practice mode below to begin.</p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4 pt-4">
+        <div className="grid sm:grid-cols-3 gap-4 pt-4">
           <div 
             onClick={() => navigate("mock")}
             className="group cursor-pointer bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-all hover:border-indigo-300"
@@ -55,6 +57,19 @@ export default function App() {
             <h2 className="text-xl font-semibold mb-2 text-slate-900">KA Drill Bank</h2>
             <p className="text-slate-600 pr-4 leading-relaxed">
               Drill specific Knowledge Areas (e.g., KA4, KA5) with dynamically generated mini-scenarios (30Q / 40m).
+            </p>
+          </div>
+
+          <div 
+            onClick={() => navigate("techniques")}
+            className="group cursor-pointer bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-all hover:border-amber-300"
+          >
+            <div className="bg-amber-50 w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Wrench className="h-6 w-6 text-amber-600" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2 text-slate-900">Techniques Drill</h2>
+            <p className="text-slate-600 pr-4 leading-relaxed">
+              Drill 50 key BA techniques (KA10). Identify purposes, strengths, and limitations with a dynamic 100Q bank.
             </p>
           </div>
         </div>
