@@ -1,0 +1,92 @@
+[
+  {
+    "concept": "Cost of Change",
+    "formula_definition": "Project Cost + Transition Cost",
+    "meaning": "Tổng chi phí để triển khai thay đổi",
+    "exam_trap": "Không chỉ là development cost"
+  },
+  {
+    "concept": "TCO (Total Cost of Ownership)",
+    "formula_definition": "Acquisition + Operating + Support Cost",
+    "meaning": "Tổng chi phí sở hữu giải pháp trong suốt vòng đời",
+    "exam_trap": "Đừng chỉ nhìn implementation cost"
+  },
+  {
+    "concept": "Cost-Benefit Analysis",
+    "formula_definition": "Benefits – Costs = Net Benefit",
+    "meaning": "Giá trị ròng dự kiến",
+    "exam_trap": "Bao gồm cả tangible + intangible benefits"
+  },
+  {
+    "concept": "Net Benefit",
+    "formula_definition": "Total Benefits − Total Costs",
+    "meaning": "Lợi ích ròng",
+    "exam_trap": "Benefit ≠ Net Benefit"
+  },
+  {
+    "concept": "ROI",
+    "formula_definition": "(Benefits − Cost) / Cost",
+    "meaning": "Tỷ lệ hoàn vốn đầu tư",
+    "exam_trap": "Không phải Benefit / Cost"
+  },
+  {
+    "concept": "BCR (Benefit Cost Ratio)",
+    "formula_definition": "Benefits / Costs",
+    "meaning": "Tỷ lệ lợi ích trên chi phí",
+    "exam_trap": "Dễ nhầm với ROI"
+  },
+  {
+    "concept": "Payback Period",
+    "formula_definition": "Cost / Annual Benefit",
+    "meaning": "Bao lâu hoàn vốn",
+    "exam_trap": "Ngắn hơn tốt hơn"
+  },
+  {
+    "concept": "Break-even Point",
+    "formula_definition": "Fixed Cost / Revenue per Unit",
+    "meaning": "Điểm hòa vốn",
+    "exam_trap": "Không phải ROI"
+  },
+  {
+    "concept": "Opportunity Cost",
+    "formula_definition": "Best Option Not Chosen",
+    "meaning": "Giá trị cơ hội bị bỏ lỡ",
+    "exam_trap": "Không phải option đã chọn"
+  },
+  {
+    "concept": "Risk Exposure",
+    "formula_definition": "Probability × Impact",
+    "meaning": "Giá trị rủi ro",
+    "exam_trap": "Không nhìn Probability riêng"
+  },
+  {
+    "concept": "EMV",
+    "formula_definition": "Probability × Monetary Impact",
+    "meaning": "Giá trị tiền tệ kỳ vọng",
+    "exam_trap": "Luôn dùng xác suất"
+  },
+  {
+    "concept": "Weighted Scoring",
+    "formula_definition": "Σ(Weight × Score)",
+    "meaning": "So sánh option/vendor",
+    "exam_trap": "Không chọn tiêu chí điểm cao nhất"
+  },
+  {
+    "concept": "Present Value (PV)",
+    "formula_definition": "Future Value / (1+r)^n",
+    "meaning": "Giá trị hiện tại của tiền tương lai",
+    "exam_trap": "Càng xa hiện tại càng giảm giá trị"
+  },
+  {
+    "concept": "Net Present Value (NPV)",
+    "formula_definition": "Σ(Present Values) − Initial Investment",
+    "meaning": "Giá trị hiện tại ròng",
+    "exam_trap": "NPV > 0 là tốt"
+  },
+  {
+    "concept": "Discount Rate",
+    "formula_definition": "r",
+    "meaning": "Tỷ lệ chiết khấu dùng trong PV/NPV",
+    "exam_trap": "Không cần tính sâu nếu đề không yêu cầu"
+  }
+]
